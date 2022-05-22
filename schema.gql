@@ -1,0 +1,46 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Cat {
+  """Cat unique ID"""
+  _id: ID!
+
+  """Cat Name"""
+  name: String!
+
+  """Cat Age"""
+  age: Int!
+}
+
+type Query {
+  cats: [Cat!]!
+  cat(id: ID!): Cat
+}
+
+type Mutation {
+  createCat(createCatInput: CreateCatInput!): Cat!
+  updateCat(updateCatInput: UpdateCatInput!): Cat!
+  removeCat(id: ID!): Cat!
+}
+
+input CreateCatInput {
+  """Cat Name"""
+  name: String!
+
+  """Cat Age"""
+  age: Int!
+}
+
+input UpdateCatInput {
+  """Cat Name"""
+  name: String
+
+  """Cat Age"""
+  age: Int
+  _id: ID!
+}
+
+type Subscription {
+  catCreated: Cat!
+}
