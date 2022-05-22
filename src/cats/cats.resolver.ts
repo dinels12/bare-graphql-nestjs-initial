@@ -1,36 +1,56 @@
-import { ParseIntPipe, UseGuards } from '@nestjs/common';
-import { Args, Query, Mutation, Resolver, Subscription } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ID,
+  Subscription,
+} from '@nestjs/graphql';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+import { CreateCatInput } from './dto/create-cat.input';
+import { UpdateCatInput } from './dto/update-cat.input';
 import { PubSub } from 'graphql-subscriptions';
-import { CatsGuard } from 'src/cats/cats.guard';
-import { CatsService } from 'src/cats/cats.service';
-import { CreateCatDto } from 'src/cats/dto/create-cat.dto';
-import { Cat } from 'src/graphql.schema';
 
 const pubSub = new PubSub();
 
-@Resolver('Cat')
+@Resolver(() => Cat)
 export class CatsResolver {
   constructor(private readonly catsService: CatsService) {}
 
-  @Query('cats')
-  @UseGuards(CatsGuard)
-  async getCats() {
+  @Mutation(() => Cat)
+  async createCat(
+    @Args('createCatInput')
+    createCatData: CreateCatInput,
+  ) {
+    const catCreated = await this.catsService.create(createCatData);
+
+    pubSub.publish('catCreated', { catCreated });
+    return catCreated;
+  }
+
+  @Query(() => [Cat], { name: 'cats' })
+  async findAll() {
     return this.catsService.findAll();
   }
-  @Query('cat')
-  async findOneById(@Args('id', ParseIntPipe) id: number): Promise<Cat> {
-    return this.catsService.findOneById(id);
+
+  @Query(() => Cat, { name: 'cat', nullable: true })
+  async findOne(@Args('id', { type: () => ID }) id: string) {
+    return this.catsService.findOne(id);
   }
 
-  @Mutation('createCat')
-  async create(@Args('createCatInput') args: CreateCatDto): Promise<Cat> {
-    const createdCat = await this.catsService.create(args);
-    pubSub.publish('catCreated', { catCreated: createdCat });
-    return createdCat;
+  @Mutation(() => Cat)
+  async updateCat(@Args('updateCatInput') updateCatInput: UpdateCatInput) {
+    return this.catsService.update(updateCatInput._id, updateCatInput);
   }
 
-  @Subscription('catCreated')
-  catCreated() {
+  @Mutation(() => Cat)
+  async removeCat(@Args('id', { type: () => ID }) id: string) {
+    return this.catsService.remove(id);
+  }
+
+  @Subscription(() => Cat)
+  async catCreated() {
     return pubSub.asyncIterator('catCreated');
   }
 }
